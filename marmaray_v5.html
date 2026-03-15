@@ -1,0 +1,256 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{padding:1.25rem 0;max-width:520px;margin:0 auto;font-family:var(--font-sans)}
+.header{text-align:center;margin-bottom:1.5rem}
+.logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px}
+.logo{width:36px;height:36px;background:#1565C0;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:20px;height:20px;fill:#fff}
+.header h1{font-size:17px;font-weight:500;color:var(--color-text-primary)}
+.header p{font-size:12px;color:var(--color-text-secondary);margin-top:3px}
+.clock-block{text-align:center;margin-bottom:1.25rem}
+.clock-big{font-size:32px;font-weight:500;color:#1565C0;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.clock-date{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.ctrl-label{font-size:11px;font-weight:500;color:#1565C0;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+select{width:100%;padding:9px 10px;font-size:13px;font-weight:500;background:#1565C0;border:.5px solid #1565C0;border-radius:8px;color:#fff;appearance:none;cursor:pointer}
+select:focus{outline:none;border-color:#0D47A1}
+select option{background:#1565C0;color:#fff}
+.dir-toggle{display:flex;border:.5px solid var(--color-border-secondary);border-radius:8px;overflow:hidden}
+.dir-btn{flex:1;padding:9px 4px;font-size:12px;font-weight:500;background:transparent;border:none;color:var(--color-text-secondary);cursor:pointer;transition:all .15s;text-align:center}
+.dir-btn.active{background:#1565C0;color:#fff}
+.legend{display:flex;gap:14px;justify-content:center;margin-bottom:.75rem;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)}
+.expand-btn{width:100%;padding:8px;font-size:12px;background:transparent;border:.5px solid var(--color-border-tertiary);border-radius:8px;color:#1976D2;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:4px}
+.expand-btn:hover{background:rgba(21,101,192,.06)}
+.expand-btn.bottom{margin-top:4px;margin-bottom:0}
+.btn-row{display:grid;gap:4px;margin-bottom:4px}
+.btn-row-bottom{display:grid;gap:4px;margin-top:4px}
+.train-list{display:flex;flex-direction:column;gap:3px;margin:4px 0}
+.train-item{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:11px 14px;border-radius:10px;border:.5px solid transparent;transition:all .15s}
+.train-item:hover{background:var(--color-background-secondary)}
+.train-item.is-next{background:#E3F0FC;border-color:#1565C0}
+.train-item.is-past{opacity:.35}
+.train-item.is-soon{background:rgba(21,101,192,.04);border-color:rgba(21,101,192,.15)}
+.type-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.dot-full{background:#1565C0}
+.dot-short{background:#64B5F6}
+.train-label{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.train-dest{font-size:11px;color:var(--color-text-secondary);margin-top:1px}
+.arr-time{font-size:14px;font-weight:500;color:var(--color-text-primary);font-variant-numeric:tabular-nums;text-align:right}
+.is-next .arr-time{color:#1565C0}
+.countdown{font-size:12px;color:var(--color-text-secondary);min-width:48px;text-align:right;font-variant-numeric:tabular-nums}
+.cnt-now{color:#1565C0;font-weight:600}
+.cnt-soon{color:#1976D2;font-weight:500}
+.next-pill{display:inline-flex;align-items:center;background:#1565C0;color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;margin-left:6px;font-weight:500;vertical-align:middle}
+.info-row{margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.info-chip{font-size:11px;color:#1565C0;background:rgba(21,101,192,.08);padding:4px 10px;border-radius:20px}
+</style>
+
+<div class="app">
+  <div class="header">
+    <div class="logo-row">
+      <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v8h16V6H4zm2 10h12v2H6v-2z"/></svg></div>
+      <h1>Marmaray Sefer Saatleri</h1>
+    </div>
+    <p>TCDD Banliyö Treni · Halkalı – Gebze</p>
+  </div>
+
+  <div class="clock-block">
+    <div class="clock-big" id="clock">--:--:--</div>
+    <div class="clock-date" id="datestr"></div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <div class="ctrl-label">Durak</div>
+      <select id="stationSelect" onchange="render()"></select>
+    </div>
+    <div>
+      <div class="ctrl-label">Yön</div>
+      <div class="dir-toggle">
+        <button class="dir-btn active" id="btn-halkali" onclick="setDir('halkali')">← Halkalı</button>
+        <button class="dir-btn" id="btn-gebze" onclick="setDir('gebze')">Gebze →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="leg-item"><span class="type-dot dot-full"></span> Tam hat (Halkalı–Gebze)</div>
+    <div class="leg-item"><span class="type-dot dot-short"></span> Kısa hat (Ataköy–Pendik)</div>
+  </div>
+
+  <div id="listWrap"></div>
+  <div class="info-row" id="infoRow"></div>
+</div>
+
+<script>
+const STATIONS=[
+  "Halkalı","Mustafa Kemal","Küçükçekmece","Florya","Florya Akvaryum",
+  "Yeşilköy","Yeşilyurt","Ataköy","Bakırköy","Yenimahalle","Zeytinburnu",
+  "Kazlıçeşme","Yenikapı","Sirkeci","Üsküdar","Ayrılıkçeşmesi",
+  "Söğütlüçeşme","Feneryolu","Göztepe","Erenköy","Suadiye","Bostancı",
+  "Küçükyalı","İdealtepe","Süreyya Plajı","Maltepe","Cevizli","Atalar",
+  "Başak","Kartal","Yunus","Pendik","Kaynarca","Tersane","Güzeyalı",
+  "Aydıntepe","İçmeler","Tuzla","Çayırova","Fatih","Osmangazi","Darıca","Gebze"
+];
+const FROM_HALKALI=[
+  0,3,7,11,13,16,18,21,24,27,29,31,35,39,43,46,
+  48,51,53,55,57,60,62,64,66,68,70,72,74,76,78,81,84,87,90,
+  92,95,98,101,104,106,108,110
+];
+const ATKOY_IDX=7,PENDIK_IDX=31;
+
+function fullDepsFromHalkali(){
+  const r=[];let h=5,m=58;
+  while(true){r.push(h*60+m);m+=15;if(m>=60){m-=60;h++;}if(h>22||(h===22&&m>58))break;}
+  return r;
+}
+function fullDepsFromGebze(){
+  const r=[];let h=6,m=5;
+  while(true){r.push(h*60+m);m+=15;if(m>=60){m-=60;h++;}if(h>22||(h===22&&m>50))break;}
+  return r;
+}
+function shortDepsFromAtkoy(){
+  const r=[];let h=6,m=9;
+  while(true){r.push(h*60+m);m+=8;if(m>=60){m-=60;h++;}if(h>21||(h===21&&m>54))break;}
+  return r;
+}
+function shortDepsFromPendik(){
+  const r=[];let h=6,m=9;
+  while(true){r.push(h*60+m);m+=8;if(m>=60){m-=60;h++;}if(h>23||(h===23&&m>17))break;}
+  return r;
+}
+
+function getTrains(stationIdx,dir){
+  const trains=[];
+  if(dir==='gebze'){
+    const tFull=FROM_HALKALI[stationIdx];
+    for(const dep of fullDepsFromHalkali())trains.push({arr:dep+tFull,type:'full',dest:'Gebze'});
+    if(stationIdx>=ATKOY_IDX&&stationIdx<=PENDIK_IDX){
+      const tShort=FROM_HALKALI[stationIdx]-FROM_HALKALI[ATKOY_IDX];
+      for(const dep of shortDepsFromAtkoy())trains.push({arr:dep+tShort,type:'short',dest:'Pendik'});
+    }
+  } else {
+    const tFull=FROM_HALKALI[42]-FROM_HALKALI[stationIdx];
+    for(const dep of fullDepsFromGebze())trains.push({arr:dep+tFull,type:'full',dest:'Halkalı'});
+    if(stationIdx>=ATKOY_IDX&&stationIdx<=PENDIK_IDX){
+      const tShort=FROM_HALKALI[PENDIK_IDX]-FROM_HALKALI[stationIdx];
+      for(const dep of shortDepsFromPendik())trains.push({arr:dep+tShort,type:'short',dest:'Ataköy'});
+    }
+  }
+  trains.sort((a,b)=>a.arr-b.arr);
+  return trains;
+}
+
+function fmt(m){
+  const h=Math.floor(m/60)%24,mn=m%60;
+  return String(h).padStart(2,'0')+':'+String(mn).padStart(2,'0');
+}
+function nowMins(){const d=new Date();return d.getHours()*60+d.getMinutes();}
+
+let direction='halkali';
+let showBefore=3,showAfter=3;
+
+function setDir(d){
+  direction=d;showBefore=3;showAfter=3;
+  document.getElementById('btn-halkali').classList.toggle('active',d==='halkali');
+  document.getElementById('btn-gebze').classList.toggle('active',d==='gebze');
+  render();
+}
+
+function render(){
+  const idx=parseInt(document.getElementById('stationSelect').value);
+  const trains=getTrains(idx,direction);
+  const now=nowMins();
+  let nextIdx=trains.findIndex(t=>t.arr>=now-1);
+  if(nextIdx===-1)nextIdx=trains.length;
+
+  const from=Math.max(0,nextIdx-showBefore);
+  const to=Math.min(trains.length,nextIdx+showAfter+1);
+  const hasBefore=from>0;
+  const canLessBefore=showBefore>3;
+  const hasAfter=to<trains.length;
+  const canLessAfter=showAfter>3;
+
+  let html='';
+
+  if(hasBefore||canLessBefore){
+    html+='<div class="btn-row">';
+    if(hasBefore) html+=`<button class="expand-btn" onclick="showMore('before')">▲ Önceki ${Math.min(from,3)} seferi göster</button>`;
+    if(canLessBefore) html+=`<button class="expand-btn" onclick="showLess('before')">▼ Daha az göster</button>`;
+    html+='</div>';
+  }
+
+  html+='<div class="train-list">';
+  for(let i=from;i<to;i++){
+    const t=trains[i];
+    const diff=t.arr-now;
+    const isPast=diff<-1;
+    const isNext=i===nextIdx;
+    let cntStr='',cntCls='';
+    if(isPast){cntStr='Geçti';}
+    else if(diff<=0){cntStr='Şimdi!';cntCls='cnt-now';}
+    else if(diff<60){cntStr=diff+' dk';cntCls=diff<=5?'cnt-now':diff<=15?'cnt-soon':'';}
+    else{cntStr=Math.floor(diff/60)+'s '+(diff%60)+'dk';}
+    const cls=isPast?'is-past':isNext?'is-next':diff<30?'is-soon':'';
+    const badge=isNext?'<span class="next-pill">Sonraki</span>':'';
+    const dot=`<span class="type-dot ${t.type==='full'?'dot-full':'dot-short'}"></span>`;
+    html+=`<div class="train-item ${cls}">
+      ${dot}
+      <div><div class="train-label">${t.dest} yönü${badge}</div>
+      <div class="train-dest">${t.type==='full'?'Tam hat':'Kısa hat'}</div></div>
+      <span class="arr-time">${fmt(t.arr)}</span>
+      <span class="countdown ${cntCls}">${cntStr}</span>
+    </div>`;
+  }
+  html+='</div>';
+
+  if(hasAfter||canLessAfter){
+    html+='<div class="btn-row-bottom">';
+    if(canLessAfter) html+=`<button class="expand-btn bottom" onclick="showLess('after')">▲ Daha az göster</button>`;
+    if(hasAfter) html+=`<button class="expand-btn bottom" onclick="showMore('after')">▼ Sonraki ${Math.min(trains.length-to,3)} seferi göster</button>`;
+    html+='</div>';
+  }
+
+  document.getElementById('listWrap').innerHTML=html;
+
+  const nextTrain=trains[nextIdx];
+  const hasShort=idx>=ATKOY_IDX&&idx<=PENDIK_IDX;
+  document.getElementById('infoRow').innerHTML=`
+    ${nextTrain?`<span class="info-chip">Sonraki: ${fmt(nextTrain.arr)}</span>`:''}
+    <span class="info-chip">Tam hat: 15 dk</span>
+    ${hasShort?'<span class="info-chip">Kısa hat: 8 dk</span>':''}
+  `;
+}
+
+function showMore(dir){
+  if(dir==='before')showBefore+=3;else showAfter+=3;
+  render();
+}
+function showLess(dir){
+  if(dir==='before')showBefore=Math.max(3,showBefore-3);
+  else showAfter=Math.max(3,showAfter-3);
+  render();
+}
+
+const sel=document.getElementById('stationSelect');
+STATIONS.forEach((s,i)=>{
+  const o=document.createElement('option');
+  o.value=i;o.textContent=s;
+  if(s==='Üsküdar')o.selected=true;
+  sel.appendChild(o);
+});
+
+function updateClock(){
+  const d=new Date(),pad=n=>String(n).padStart(2,'0');
+  document.getElementById('clock').textContent=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  const days=['Pazar','Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi'];
+  const months=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  document.getElementById('datestr').textContent=days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();
+}
+setInterval(updateClock,1000);
+setInterval(render,30000);
+updateClock();
+render();
+</script>
